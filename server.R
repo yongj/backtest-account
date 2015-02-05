@@ -4,11 +4,58 @@ source("C:/Users/jiang_y/Documents/R/Proj_Stock/Function_Strategy.R")
 source("helpers.R")
 loadUser("yj")
 
-#initDataStr = outputStr()
-#status <- list(Pass=TRUE,Msg="Account initialized successfully")
-
 shinyServer(
   function(input, output) {
+    
+    # Create a reactiveValues object to show current status
+    # The status info will be passed to loginfo output
+    status <- reactiveValues()
+    status$LastAction <- "Start"
+    status$Pass <- TRUE
+    status$Msg <- "Account initialized successfully!"
+
+    observe({
+      if (input$Save != 0) {
+        status$LastAction <- 'Save'
+        saveUser("yj")
+        status$Pass <- TRUE
+        status$Msg <- "Save account successfully!"
+      }
+    })
+    
+    observe({
+      if (input$Load != 0) {
+        status$LastAction <- 'Load'
+        loadUser("yj")
+        status$Pass <- TRUE
+        status$Msg <- "Load account successfully!"
+      }
+    })
+
+    observe({
+      if (input$Reset != 0) {
+        status$LastAction <- 'Reset'
+        loadUser("yj")
+        status$Pass <- TRUE
+        status$Msg <- "Reset account successfully!"
+      }
+    })
+    
+    observe({
+      if (input$Go != 0) {
+        status$LastAction <- 'Go'
+        
+        actionStr = isolate({input$Action})
+        itemStr = isolate({input$Item})
+        parentName = isolate({input$selectParentName})
+        newName = isolate({input$NewName})
+        status0 <- takeAction(action=actionStr,item=itemStr,parent=parentName,name=newName)
+        
+        status$Pass <- status0$Pass
+        status$Msg <- status0$Msg
+      }
+    })
+                  
     output$selectParent <- renderUI({
       choiceList = switch(input$Item,
                           "Account"="yj",
@@ -32,57 +79,27 @@ shinyServer(
       
     })
 
-    
-#     output$summary <- renderText({
-#       input$Go
-#       if (input$Go == 0)
-#         return(initDataStr)
-#       
-#       actionStr = isolate({input$Action})
-#       itemStr = isolate({input$Item})
-#       parentName = isolate({input$selectParentName})
-#       newName = isolate({input$NewName})
-#       
-#       takeAction(action=actionStr,item=itemStr,parent=parentName,name=newName)
-#       
-#       dataStr = paste(outputStr(),actionStr,itemStr,parentName,newName)
-#     })
-    
-    goAction <- reactive({
-      input$Go
-      if (input$Go == 0){
-        status <- list(Pass=TRUE,Msg="Account initialized successfully")
-        return(status)
-      }      
-      actionStr = isolate({input$Action})
-      itemStr = isolate({input$Item})
-      parentName = isolate({input$selectParentName})
-      newName = isolate({input$NewName})
-      status <- takeAction(action=actionStr,item=itemStr,parent=parentName,name=newName)
-      return(status)
-    })
+  
 
 
     output$logInfo <- renderUI({
-      status = goAction()
-      if(status$Pass==TRUE){
-        logStr = paste("PASS: ",status$Msg,sep="")
-        tags$div(HTML(paste(tags$span(style="color:green", logStr))))
-      }
+      
+      if (status$Pass == TRUE){
+        logStr = paste("PASS",status$Msg,sep=": ")
+        return(tags$div(HTML(paste(tags$span(style="color:green", logStr)))))
+      } 
       else{
-        logStr = paste("FAIL: ",status$Msg,sep="")
-        tags$div(HTML(paste(tags$span(style="color:red", logStr))))
-      }
-#       input$Save
-#       if (input$Save == 0)
-#         return("Running OK")
-#       saveUser("yj")
-#       dataStr = "Data saved succesfully\n"
+        logStr = paste("FAIL",status$Msg,sep=": ")
+        return(tags$div(HTML(paste(tags$span(style="color:red", logStr)))))
+      }  
     })
     
-    output$accountFlowChart <- renderPlot({      
-      status = goAction()      
-      drawFlowChart()
+    output$accountFlowChart <- renderPlot({
+      if ((input$Go==0)){drawFlowChart()}
+      if ((input$Go!=0)){drawFlowChart()}
+      if ((input$Save!=0)){drawFlowChart()}
+      if ((input$Load!=0)){drawFlowChart()}
+      if ((input$Reset!=0)){drawFlowChart()}            
     })
       
     
