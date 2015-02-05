@@ -88,3 +88,7 @@ potfList <- function(){
   }
   return(data)
 }
+
+resetUser <- function(userID="yj"){
+  loadUser(userID)
+}
